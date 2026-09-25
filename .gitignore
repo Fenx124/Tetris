@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Vendored Raylib import libraries. The rules above ignore any Win32/ and x64/
+# directory (Visual Studio build output). These two are source, not build output.
+!third_party/raylib/lib/Win32/
+!third_party/raylib/lib/x64/
+!third_party/raylib/lib/Win32/**
+!third_party/raylib/lib/x64/**

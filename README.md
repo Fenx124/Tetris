@@ -57,15 +57,27 @@
 
 用 Visual Studio 打开 `Tetris.sln`。解决方案标明 Visual Studio Version 17（`VisualStudioVersion` 为 17.14.36623.8）。工程 `Tetris.vcxproj` 的 `VCProjectVersion` 为 17.0，平台工具集为 `v145`（Visual Studio 2026 的 MSVC 工具集），Windows 目标平台版本为 10.0。配置为 Debug 与 Release，平台为 Win32 与 x64；解决方案里的 x86 对应工程的 Win32。字符集为 Unicode，子系统为控制台。
 
-Raylib 的头文件和库路径只写在部分配置中：
+四个配置的包含目录、库目录和链接依赖相同，都链接 `raylib.lib`、`winmm.lib`、`gdi32.lib`，并定义 `USE_LIBTYPE_SHARED`（按 DLL 使用 Raylib）。克隆后可以直接编译这四个配置，不必改工程文件。
 
-- **Release \| Win32** 与 **Debug \| x64**
-  - 附加包含目录：`D:\code tools\raylib-master\src`
-  - 附加库目录：`D:\code tools\raylib-master\projects\VS2022\build\raylib\bin\Win32\Debug.DLL`
-  - 附加依赖：`raylib.lib`、`winmm.lib`；Debug \| x64 另外链接 `gdi32.lib`
-- **Debug \| Win32** 与 **Release \| x64** 没有配置上述包含目录和库目录
+默认使用仓库里的 `third_party/raylib`（Raylib 6.0，取自官方包 `raylib-6.0_win32_msvc16` 与 `raylib-6.0_win64_msvc16`）：
 
-这些是工程里的本机绝对路径。本仓库根目录附带 `raylib.dll`。运行时请把 `raylib.dll` 放在 exe 同一目录。
+- 头文件：`third_party/raylib/include`（`raylib.h`、`raymath.h`）
+- Win32：`third_party/raylib/lib/Win32` 下的 `raylib.lib` 与 `raylib.dll`
+- x64：`third_party/raylib/lib/x64` 下的 `raylib.lib` 与 `raylib.dll`
+
+这里的 `raylib.lib` 是官方包中的导入库 `raylibdll.lib`（不是同包里体积更大的静态库）。Debug 和 Release 共用对应平台的这一套文件。生成后，若库目录中有 `raylib.dll`，工程会把它复制到 exe 同一目录。
+
+若要改用本机的 Raylib 源码树，设置环境变量 `RAYLIB_PATH`，或在 MSBuild 里传入 `/p:RAYLIB_PATH=...`。已设置时它优先于上面的默认目录。例如：
+
+```text
+RAYLIB_PATH=D:\code tools\raylib-master
+```
+
+当该目录中存在 `src\raylib.h` 时，头文件用 `$(RAYLIB_PATH)\src`，库用 Raylib 自带 VS2022 工程编出的 DLL 目录：
+
+`$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\<Win32 或 x64>\<Debug.DLL 或 Release.DLL>`
+
+其中需要有 `raylib.lib` 和旁边的 `raylib.dll`。当前配置的目录里没有 `raylib.lib` 时，改用同一平台的 `Debug.DLL`。不设置 `RAYLIB_PATH` 则不需要额外准备。
 
 资源与存档使用相对路径，工作目录下需要有 `Resources` 和 `Save`：
 
@@ -91,8 +103,11 @@ Raylib 的头文件和库路径只写在部分配置中：
 - `Resources/`：背景图与音频。
 - `Save/`：最高分与设置的二进制存档。
 - `Tetris_Game/`：可执行文件、`raylib.dll`、`Resources` 和 `Save` 放在一起的目录。
-- `raylib.dll`：仓库根目录中的 Raylib 动态库。
+- `third_party/raylib/`：随仓库提供的 Raylib 6.0 头文件，以及 Win32 / x64 的导入库和 DLL。
+- `raylib.dll`（仓库根目录）：原先附带的 Win32 动态库，版本字符串为 5.6-dev。用 Visual Studio 生成时，复制到 exe 旁边的是当前链接所用的那份 `raylib.dll`（默认来自 `third_party/raylib`）。
 
 ## 许可证
 
 本项目以 [MIT 许可证](LICENSE) 发布。Copyright (c) 2026 Fenx124。
+
+`third_party/raylib` 是 Raylib 6.0 的预编译文件，许可见 [third_party/raylib/LICENSE](third_party/raylib/LICENSE)（zlib）。
