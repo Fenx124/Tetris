@@ -70,6 +70,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <!--
+    Raylib location.
+    RAYLIB_PATH may come from the environment or /p:RAYLIB_PATH=...
+    When unset, the vendored copy under third_party\raylib is used.
+    A raylib source tree (src\raylib.h present) uses its VS2022 DLL build outputs.
+  -->
+  <PropertyGroup Label="Raylib">
+    <RAYLIB_PATH Condition="'$(RAYLIB_PATH)' == ''">$(ProjectDir)third_party\raylib</RAYLIB_PATH>
+    <RaylibIsSourceTree Condition="Exists('$(RAYLIB_PATH)\src\raylib.h')">true</RaylibIsSourceTree>
+    <RaylibIncludeDir Condition="'$(RaylibIsSourceTree)' == 'true'">$(RAYLIB_PATH)\src</RaylibIncludeDir>
+    <RaylibIncludeDir Condition="'$(RaylibIncludeDir)' == ''">$(RAYLIB_PATH)\include</RaylibIncludeDir>
+    <RaylibLibDir Condition="'$(RaylibIsSourceTree)' == 'true' and Exists('$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.lib')">$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\$(Platform)\$(Configuration).DLL</RaylibLibDir>
+    <RaylibLibDir Condition="'$(RaylibIsSourceTree)' == 'true' and '$(RaylibLibDir)' == '' and Exists('$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\$(Platform)\Debug.DLL\raylib.lib')">$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\$(Platform)\Debug.DLL</RaylibLibDir>
+    <RaylibLibDir Condition="'$(RaylibIsSourceTree)' == 'true' and '$(RaylibLibDir)' == ''">$(RAYLIB_PATH)\projects\VS2022\build\raylib\bin\$(Platform)\$(Configuration).DLL</RaylibLibDir>
+    <RaylibLibDir Condition="'$(RaylibLibDir)' == ''">$(RAYLIB_PATH)\lib\$(Platform)</RaylibLibDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -90,13 +106,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\code tools\raylib-master\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\code tools\raylib-master\projects\VS2022\build\raylib\bin\Win32\Debug.DLL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>raylib.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -105,13 +118,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\code tools\raylib-master\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\code tools\raylib-master\projects\VS2022\build\raylib\bin\Win32\Debug.DLL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>raylib.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,6 +137,19 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(RaylibIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>USE_LIBTYPE_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(RaylibLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(RaylibLibDir)\raylib.dll" copy /Y "$(RaylibLibDir)\raylib.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cheak.cpp" />
